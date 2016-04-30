@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FunBalls</title>
+  <meta name = "viewport" content = "user-scalable=no, initial-scale=1.0, maximum-scale=1.0, width=device-width">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-material/1.0.7/angular-material.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body ng-app="FunBalls" layout="column" ng-controller="FunballsController">
+  <md-sidenav
+      class="md-sidenav-left"
+      md-component-id="left"
+      md-is-locked-open="false"
+      md-disable-backdrop
+      md-whiteframe="4">
+    <md-toolbar class="md-theme-indigo">
+      <div class="md-toolbar-tools">
+        <h2>  
+          <span>Menu</span>
+        </h2>
+        <span flex></span>
+        <md-button class="md-icon-button" aria-label="Close" ng-click="closeMenu()">
+          <md-icon> close </md-icon>
+        </md-button>
+      </div>
+    </md-toolbar>
+    <md-content layout-padding>
+      <md-input-container class="md-block">
+        <label>Number of Balls</label>
+        <input ng-model="config.numBalls" type="number" step="1">
+      </md-input-container>
+      <md-input-container class="md-block">
+        <label>Ball Size</label>
+        <input ng-model="config.ballRadius" type="number" step="1">
+      </md-input-container>
+      <md-switch ng-model="config.showEdges" aria-label="Show Edges">
+        Show Edges
+      </md-switch>
+      <md-switch ng-model="config.showRadius" aria-label="Show Radius">
+        Show Radius Lines
+      </md-switch>
+      <md-switch ng-model="config.showInRadius" aria-label="Show InRadius">
+        Show InRadius Lines
+      </md-switch>
+      <md-switch ng-model="config.showCenterPoint" aria-label="Show Center Point">
+        Show Center Point
+      </md-switch>
+    </md-content>
+  </md-sidenav>
+  <md-content id="content" layout="row" flex>
+    <md-button class="md-fab md-primary" ng-click="openMenu()" aria-label="Use Android">
+      <md-icon> menu </md-icon>
+    </md-button>
+    <canvas id="canvas" flex ng-mousemove="mouseMove($event)"></canvas>
+  </md-content>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular-animate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular-aria.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-material/1.0.7/angular-material.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+<script>
+angular.module('FunBalls', ['ngMaterial'])
+  .run(function(){
+
+  });
+angular.module('FunBalls').controller('FunballsController', ['$scope', '$interval', '$mdSidenav', function($scope, $interval, $mdSidenav) {
+    window.addEventListener('resize', init);
+    var canvas = document.getElementById('canvas');
+    canvas.addEventListener('touchmove', touchHandler);
+    function init(){
+      canvas.width = window.innerWidth;//TODO redo this on size change
+      canvas.height = window.innerHeight;
+    }
+    init();
+    
+    var context = canvas.getContext("2d");
+    $scope.config = {
+      numBalls: 7,
+      ballRadius: 5,
+      showEdges: false,
+      showRadius: false,
+      showInRadius: false,
+      showCenterPoint: true,
+      ballColor: '#0088ff',
+      history:15//also known as trail length
+    }
+
+    function touchHandler(event){
+      event.preventDefault();
+      var x = event.touches[0].clientX;
+      var y = event.touches[0].clientY;
+      updateBalls(x,y);
+    }
+    function mouseHandler(event){
+      var x = event.clientX;
+      var y = event.clientY;
+      updateBalls(x,y);
+    }
+    $scope.mouseMove = mouseHandler;
+
+
+    $scope.openMenu = function(){
+      $mdSidenav('left').open();
+    }
+    $scope.closeMenu = function(){
+      $mdSidenav('left').close();
+    }
+    function draw(){
+      drawBackground();
+      drawCenterBall();
+
+      //draw balls
+      var center = getCenter();
+      _.each($scope.ballPoints, function(bp, index){
+        let prev = index===0?$scope.ballPoints[$scope.ballPoints.length-1]:$scope.ballPoints[index-1];
+
+        drawBall(bp.x,bp.y,$scope.config.ballColor);
+        if($scope.config.showEdges){
+          drawLine(bp.x, bp.y, prev.x, prev.y, $scope.config.ballColor)
+        }
+        if($scope.config.showRadius){
+          drawLine(bp.x, bp.y, center.x, center.y, $scope.config.ballColor)
+        }
+        if($scope.config.showInRadius){
+          let midx = (prev.x + bp.x) / 2 ;
+          let midy = (prev.y + bp.y) / 2 ;
+          drawLine(midx, midy, center.x, center.y, $scope.config.ballColor)
+        }
+      });
+    }
+
+    $interval(draw, 20, false);
+
+    function drawBackground(){
+      var opacity = ($scope.config.history / 100);
+      context.fillStyle='rgba(0,0,0,'+opacity+')';
+      context.fillRect(0,0,canvas.width, canvas.height);
+    }
+    function drawCenterBall(){
+      if(!$scope.config.showCenterPoint){
+        return;
+      }
+      var center = getCenter();
+      drawBall(center.x, center.y, $scope.config.ballColor);
+    }
+    function getCenter(){
+      return {
+        x: Math.floor(canvas.width/2), 
+        y: Math.floor(canvas.height/2)
+      };
+    }
+    function updateBalls(x, y){
+      var center = getCenter();
+      var a = x - center.x;
+      var b = y - center.y;
+      var hypotenuse = Math.sqrt(a*a+b*b);
+      var pi = Math.PI;
+      var angleBetweenPoints = (2*pi)/$scope.config.numBalls;
+      //console.log('Angle Between Points: '+angleBetweenPoints);
+      var angle = Math.asin(b / hypotenuse);
+      var degrees = angle*(180/pi);
+      if(a < 0 && b >= 0){
+        degrees = 90 + (90 - degrees);
+        angle = pi/2 + (pi/2 - angle);
+      }else if(a < 0 && b <  0){
+        degrees = -90 - (90 + degrees);
+        angle = -pi/2 - (pi/2 + angle);
+      }
+      var startingAngle = angle;
+      var ballPoints = [];
+      for(let i = 0;i<$scope.config.numBalls;i++){
+        let rad = startingAngle + angleBetweenPoints*i;
+        let by = center.y + Math.sin(rad)*hypotenuse;
+        let bx = center.x + Math.cos(rad)*hypotenuse;
+        ballPoints.push({x: bx, y: by});
+      }
+      $scope.ballPoints = ballPoints;
+
+    }
+
+    function drawLine(x1, y1, x2, y2, color){
+      context.strokeStyle=color;
+      context.moveTo(x1,y1);
+      context.lineTo(x2,y2);
+      context.stroke();
+    }
+    function drawBall(x, y, color){
+      context.fillStyle=color;
+      context.beginPath();
+      context.arc(x,y,$scope.config.ballRadius,0,2*Math.PI);
+      context.fill();
+    }
+  }
+]);
+</script>
+<style>
+  html, body{
+    overflow:hidden;
+  }
+  #content{
+    background-color:#000;
+    color:#fff;
+  }
+  #canvas{
+    cursor:none;
+    position:absolute;
+    top:0px;
+    left:0px;
+  }
+</style>
+</body>
+</html>
