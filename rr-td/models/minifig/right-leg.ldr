@@ -1,0 +1,24 @@
+0 Main Model
+0 Name: 7140 - Main Model.ldr
+0 Author: Daniel Goerner [TK-949]
+0 !LDRAW_ORG Model
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+
+0 !THEME Star Wars
+0 !KEYWORDS Episode IV, Luke Skywalker, Biggs Darklighter, Rebel Technician, R2-D2
+
+0 !HISTORY 2012-05-19 [TK-949] Creation
+0 !HISTORY 2016-02-21 [legolijntje] Updated ~moved files and swapped inlined parts for official versions
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 7140 - Minifig - Luke Skywalker.ldr
+
+
+0 FILE 7140 - Minifig - Luke Skywalker.ldr
+0 Minifig - Luke Skywalker
+0 Name: 7140 - Minifig - Luke Skywalker.ldr
+0 Author: Daniel Goerner [TK-949]
+0 !LDRAW_ORG Model
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+
+0 // right leg
+1 25 0 0 0 1 0 0 0 0 1 0 0 0 parts/3816.dat
